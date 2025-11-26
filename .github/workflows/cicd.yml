@@ -33,13 +33,7 @@ jobs:
       - name: Code coverage
         run: npm run coverage  || echo "Coverage skipped"
 
-      - name: SonarQube Analysis
-        uses: SonarSource/sonarcloud-github-action@v2
-        with:
-          projectKey: ${{ secrets.SONAR_PROJECT_KEY }}
-          organization: ${{ secrets.SONAR_ORG }}
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
