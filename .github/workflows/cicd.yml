@@ -46,7 +46,8 @@ jobs:
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
             -Dsonar.sources=.
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-            -Dsonar.exclusions=.github/**
+            -Dsonar.exclusions=**/.github/**,**/node_modules/**
+
 
       - name: Check SonarCloud Quality Gate
         uses: sonarsource/sonarcloud-github-action@v2
