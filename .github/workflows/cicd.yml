@@ -35,29 +35,24 @@ jobs:
       - name: Code coverage
         run: npm run coverage || echo "Coverage skipped"
 
+
+      
+      
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
             -Dsonar.organization=${{ secrets.SONAR_ORG }}
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
             -Dsonar.sources=.
+            -Dsonar.exclusions=**/.github/**,**/node_modules/**,**/dist/**
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
-            -Dsonar.exclusions=**/.github/**,**/node_modules/**
+            -Dsonar.qualitygate.wait=true
 
 
-      - name: Check SonarCloud Quality Gate
-        uses: sonarsource/sonarcloud-github-action@v2
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        with:
-          args: >
-            -Dsonar.organization=${{ secrets.SONAR_ORG }}
-            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-            -Dsonar.qualitygate.wait=true      
+  
 
   docker:
     name: Docker Build & Publish
