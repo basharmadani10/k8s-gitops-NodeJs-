@@ -33,6 +33,7 @@ jobs:
         run: npm test
 
       - name: Code coverage
+        # Note: If you want the pipeline to fail when coverage fails, remove '|| echo...'
         run: npm run coverage || echo "Coverage skipped"
 
       - name: SonarCloud Scan
@@ -51,6 +52,10 @@ jobs:
     name: Docker Build & Publish
     runs-on: ubuntu-latest
     needs: ci
+    # ▼▼▼ THIS IS THE FIX ▼▼▼
+    permissions: 
+      contents: write
+    # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
