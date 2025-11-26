@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*.*.*'
 
+permissions:
+  contents: write
+
 jobs:
   docker-production:
     name: Build & Push Docker Production
@@ -27,7 +30,7 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build -t bm106/k8s-gitops-nodejs:${{ env.VERSION }} -t bm106/k8s-gitops-nodejs:latest .
-      
+
       - name: Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@master
         with:
@@ -36,7 +39,7 @@ jobs:
       - name: Push Docker Image
         run: |
           docker push bm106/k8s-gitops-nodejs:${{ env.VERSION }}
-          docker push bm106/k8s-gitops-nodejs:${{ env.VERSION }}
+          docker push bm106/k8s-gitops-nodejs:latest
 
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
