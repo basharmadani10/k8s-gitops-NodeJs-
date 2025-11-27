@@ -1,4 +1,5 @@
 name: Production Deployment
+
 on:
   push:
     tags:
@@ -11,67 +12,118 @@ jobs:
   docker-production:
     name: Build & Push Docker Production
     runs-on: ubuntu-latest
+
     steps:
+      # --------------------------
+      # 1. Checkout
+      # --------------------------
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      # --------------------------
+      # 2. Docker Setup & Login
+      # --------------------------
       - uses: docker/setup-buildx-action@v3
+
       - uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_TOKEN }}
 
+      # --------------------------
+      # 3. Extract Version from Tag
+      # --------------------------
       - name: Set version
         run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
 
-      
+      # --------------------------
+      # 4. Build Docker Image
+      # --------------------------
       - name: Build Docker Image
-        id: docker_build  
+        id: docker_build
         run: |
-          docker build -t bm106/k8s-gitops-nodejs:${{ env.VERSION }} -t bm106/k8s-gitops-nodejs:latest .
+          docker build \
+            -t bm106/k8s-gitops-nodejs:${{ env.VERSION }} \
+            -t bm106/k8s-gitops-nodejs:latest .
 
- 
+      # --------------------------
+      # 5. Security Scan (Trivy)
+      # --------------------------
       - name: Scan Docker image with Trivy
-        id: trivy_scan   
+        id: trivy_scan
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: bm106/k8s-gitops-nodejs:${{ env.VERSION }}
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
 
-      
+      # --------------------------
+      # 6. Push only if scan OK
+      # --------------------------
       - name: Push Docker Image
-        id: docker_push  
-        if: steps.trivy_scan.outcome == 'success' 
+        id: docker_push
+        if: steps.trivy_scan.outcome == 'success'
         run: |
           docker push bm106/k8s-gitops-nodejs:${{ env.VERSION }}
           docker push bm106/k8s-gitops-nodejs:latest
 
-      
+      # --------------------------
+      # 7. Create GitHub Release
+      # --------------------------
       - name: Create GitHub Release
-        id: gh_release   
+        id: gh_release
         if: steps.docker_push.outcome == 'success'
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.VERSION }}
           name: Release ${{ env.VERSION }}
 
-      
-      - name: Slack Detailed Report
-        if: always() 
-        uses: rtCamp/action-slack-notify@v2
-        env:
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
-          SLACK_COLOR: ${{ job.status }}
-          SLACK_TITLE: "Deployment Status: ${{ job.status }}"
-          SLACK_MESSAGE: |
-            *Version:* ${{ env.VERSION }}
-            
-            *Step Breakdown:*
-            🐳 Build: ${{ steps.docker_build.outcome }}
-            🛡️ Security Scan: ${{ steps.trivy_scan.outcome }}
-            🚀 Push to Hub: ${{ steps.docker_push.outcome }}
-            📦 GitHub Release: ${{ steps.gh_release.outcome }}
-            
-            <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Full Logs>
+      # --------------------------
+      # 8. Send Email Report (always)
+      # --------------------------
+      - name: Send Deployment Email
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USER }}
+          password: ${{ secrets.EMAIL_PASS }}
+          subject: "Production Deployment Status: ${{ job.status }} — Version: ${{ env.VERSION }}"
+          to: ${{ secrets.EMAIL_TO }}
+          from: "CI Pipeline <${{ secrets.EMAIL_USER }}>"
+          content_type: text/html
+          body: |
+            <h2>🚀 Production Deployment Report</h2>
+
+            <p><strong>Version:</strong> ${{ env.VERSION }}</p>
+            <p><strong>Final Status:</strong>
+              <span style="color:${{ job.status == 'success' && 'green' || 'red'}};">
+                ${{ job.status }}
+              </span>
+            </p>
+
+            <h3>🔹 Step Summary</h3>
+            <ul>
+              <li>🐳 Build Docker Image: <strong>${{ steps.docker_build.outcome }}</strong></li>
+              <li>🛡️ Security Scan (Trivy): <strong>${{ steps.trivy_scan.outcome }}</strong></li>
+              <li>🚀 Push to Docker Hub: <strong>${{ steps.docker_push.outcome }}</strong></li>
+              <li>📦 GitHub Release: <strong>${{ steps.gh_release.outcome }}</strong></li>
+            </ul>
+
+            <hr/>
+
+            <p>
+            ${
+              job.status == 'success'
+                ? '🎉 Deployment completed successfully. All stages passed.'
+                : '❗ Deployment failed during one or more stages. Please check details below.'
+            }
+            </p>
+
+            <p>
+              <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">
+                🔗 View Full Logs
+              </a>
+            </p>
