@@ -115,11 +115,7 @@ jobs:
             <hr/>
 
             <p>
-            ${
-              job.status == 'success'
-                ? '🎉 Deployment completed successfully. All stages passed.'
-                : '❗ Deployment failed during one or more stages. Please check details below.'
-            }
+              ${{ job.status == 'success' && '🎉 Deployment completed successfully. All stages passed.' || '❗ Deployment failed during one or more stages. Please check details below.' }}
             </p>
 
             <p>
