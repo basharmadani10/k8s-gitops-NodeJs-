@@ -55,6 +55,8 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: bm106/k8s-gitops-nodejs:${{ env.VERSION }}
+          # Keep '1' to fail pipeline on security risks.
+          # Change to '0' if you want to force success even with vulnerabilities.
           exit-code: '1'
           severity: 'CRITICAL,HIGH'
 
@@ -94,8 +96,9 @@ jobs:
           to: ${{ secrets.EMAIL_TO }}
           from: "CI Pipeline <${{ secrets.EMAIL_USER }}>"
           content_type: text/html
+          # Uses HTML Entities for emojis to prevent them from being stripped
           body: |
-            <h2>🚀 Production Deployment Report</h2>
+            <h2>&#128640; Production Deployment Report</h2>
 
             <p><strong>Version:</strong> ${{ env.VERSION }}</p>
             <p><strong>Final Status:</strong>
@@ -104,22 +107,22 @@ jobs:
               </span>
             </p>
 
-            <h3>🔹 Step Summary</h3>
+            <h3>&#128313; Step Summary</h3>
             <ul>
-              <li>🐳 Build Docker Image: <strong>${{ steps.docker_build.outcome }}</strong></li>
-              <li>🛡️ Security Scan (Trivy): <strong>${{ steps.trivy_scan.outcome }}</strong></li>
-              <li>🚀 Push to Docker Hub: <strong>${{ steps.docker_push.outcome }}</strong></li>
-              <li>📦 GitHub Release: <strong>${{ steps.gh_release.outcome }}</strong></li>
+              <li>&#128051; Build Docker Image: <strong>${{ steps.docker_build.outcome }}</strong></li>
+              <li>&#128737; Security Scan (Trivy): <strong>${{ steps.trivy_scan.outcome }}</strong></li>
+              <li>&#128640; Push to Docker Hub: <strong>${{ steps.docker_push.outcome }}</strong></li>
+              <li>&#128230; GitHub Release: <strong>${{ steps.gh_release.outcome }}</strong></li>
             </ul>
 
             <hr/>
 
             <p>
-              ${{ job.status == 'success' && '🎉 Deployment completed successfully. All stages passed.' || '❗ Deployment failed during one or more stages. Please check details below.' }}
+              ${{ job.status == 'success' && '&#127881; Deployment completed successfully. All stages passed.' || '&#10071; Deployment failed during one or more stages. Please check details below.' }}
             </p>
 
             <p>
               <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">
-                🔗 View Full Logs
+                &#128279; View Full Logs
               </a>
             </p>
