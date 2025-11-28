@@ -101,7 +101,7 @@ jobs:
               <p><strong>Version:</strong> ${{ env.VERSION }}</p>
               <p><strong>Final Status:</strong>
                 <span style="color:${{ job.status == 'success' && 'green' || 'red' }};">
-                  ${{ toUpperCase(job.status) }}
+                  ${{ job.status == 'success' && 'SUCCESS' || job.status == 'failure' && 'FAILURE' || job.status }}
                 </span>
               </p>
 
@@ -109,22 +109,22 @@ jobs:
               <ul>
                 <li>🐶 Build Docker Image: 
                   <strong style="color:${{ steps.docker_build.outcome == 'success' && 'green' || 'red' }};">
-                    ${{ steps.docker_build.outcome }}
+                    ${{ steps.docker_build.outcome == 'success' && 'SUCCESS' || steps.docker_build.outcome == 'failure' && 'FAILURE' || steps.docker_build.outcome }}
                   </strong>
                 </li>
                 <li>🛡 Security Scan (Trivy): 
                   <strong style="color:${{ steps.trivy_scan.outcome == 'success' && 'green' || 'red' }};">
-                    ${{ steps.trivy_scan.outcome }}
+                    ${{ steps.trivy_scan.outcome == 'success' && 'SUCCESS' || steps.trivy_scan.outcome == 'failure' && 'FAILURE' || steps.trivy_scan.outcome }}
                   </strong>
                 </li>
                 <li>🚢 Push to Docker Hub: 
                   <strong style="color:${{ steps.docker_push.outcome == 'success' && 'green' || 'orange' }};">
-                    ${{ steps.docker_push.outcome }}
+                    ${{ steps.docker_push.outcome == 'success' && 'SUCCESS' || steps.docker_push.outcome == 'failure' && 'FAILURE' || steps.docker_push.outcome }}
                   </strong>
                 </li>
                 <li>📦 GitHub Release: 
                   <strong style="color:${{ steps.gh_release.outcome == 'success' && 'green' || 'orange' }};">
-                    ${{ steps.gh_release.outcome }}
+                    ${{ steps.gh_release.outcome == 'success' && 'SUCCESS' || steps.gh_release.outcome == 'failure' && 'FAILURE' || steps.gh_release.outcome }}
                   </strong>
                 </li>
               </ul>
