@@ -93,6 +93,7 @@ jobs:
           subject: "Production Deployment Status: ${{ job.status }} — Version: ${{ env.VERSION }}"
           to: ${{ secrets.EMAIL_TO }}
           from: "CI Pipeline <${{ secrets.EMAIL_USER }}>"
+
           html_body: |
             <div style="font-family: Arial, sans-serif; line-height: 1.5;">
               <h2 style="color:#0b5394;">🚀 Production Deployment Report</h2>
@@ -100,16 +101,32 @@ jobs:
               <p><strong>Version:</strong> ${{ env.VERSION }}</p>
               <p><strong>Final Status:</strong>
                 <span style="color:${{ job.status == 'success' && 'green' || 'red' }};">
-                  ${{ job.status | upper }}
+                  ${{ toUpperCase(job.status) }}
                 </span>
               </p>
 
               <h3 style="color:#3d85c6;">📝 Step Summary</h3>
               <ul>
-                <li>🐶 Build Docker Image: <strong style="color:${{ steps.docker_build.outcome == 'success' && 'green' || 'red' }};">${{ steps.docker_build.outcome }}</strong></li>
-                <li>🛡 Security Scan (Trivy): <strong style="color:${{ steps.trivy_scan.outcome == 'success' && 'green' || 'red' }};">${{ steps.trivy_scan.outcome }}</strong></li>
-                <li>🚢 Push to Docker Hub: <strong style="color:${{ steps.docker_push.outcome == 'success' && 'green' || 'orange' }};">${{ steps.docker_push.outcome }}</strong></li>
-                <li>📦 GitHub Release: <strong style="color:${{ steps.gh_release.outcome == 'success' && 'green' || 'orange' }};">${{ steps.gh_release.outcome }}</strong></li>
+                <li>🐶 Build Docker Image: 
+                  <strong style="color:${{ steps.docker_build.outcome == 'success' && 'green' || 'red' }};">
+                    ${{ steps.docker_build.outcome }}
+                  </strong>
+                </li>
+                <li>🛡 Security Scan (Trivy): 
+                  <strong style="color:${{ steps.trivy_scan.outcome == 'success' && 'green' || 'red' }};">
+                    ${{ steps.trivy_scan.outcome }}
+                  </strong>
+                </li>
+                <li>🚢 Push to Docker Hub: 
+                  <strong style="color:${{ steps.docker_push.outcome == 'success' && 'green' || 'orange' }};">
+                    ${{ steps.docker_push.outcome }}
+                  </strong>
+                </li>
+                <li>📦 GitHub Release: 
+                  <strong style="color:${{ steps.gh_release.outcome == 'success' && 'green' || 'orange' }};">
+                    ${{ steps.gh_release.outcome }}
+                  </strong>
+                </li>
               </ul>
 
               <hr/>
