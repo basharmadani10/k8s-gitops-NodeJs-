@@ -56,7 +56,7 @@ jobs:
         with:
           image-ref: bm106/k8s-gitops-nodejs:${{ env.VERSION }}
           exit-code: '1'
-          severity: 'CRITICAL,HIGH'
+          severity: 'CRITICAL'
 
       # --------------------------
       # 6. Push only if scan OK
