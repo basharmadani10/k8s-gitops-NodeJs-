@@ -84,6 +84,90 @@ jobs:
       # --------------------------
       # 8. Send Email Report (always)
       # --------------------------
+name: Production Deployment
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  docker-production:
+    name: Build & Push Docker Production
+    runs-on: ubuntu-latest
+
+    steps:
+      # --------------------------
+      # 1. Checkout
+      # --------------------------
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # --------------------------
+      # 2. Docker Setup & Login
+      # --------------------------
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      # --------------------------
+      # 3. Extract Version from Tag
+      # --------------------------
+      - name: Set version
+        run: echo "VERSION=${{ github.ref_name }}" >> $GITHUB_ENV
+
+      # --------------------------
+      # 4. Build Docker Image
+      # --------------------------
+      - name: Build Docker Image
+        id: docker_build
+        run: |
+          docker build \
+            -t bm106/k8s-gitops-nodejs:${{ env.VERSION }} \
+            -t bm106/k8s-gitops-nodejs:latest .
+
+      # --------------------------
+      # 5. Security Scan (Trivy)
+      # --------------------------
+      - name: Scan Docker image with Trivy
+        id: trivy_scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: bm106/k8s-gitops-nodejs:${{ env.VERSION }}
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
+
+      # --------------------------
+      # 6. Push only if scan OK
+      # --------------------------
+      - name: Push Docker Image
+        id: docker_push
+        if: steps.trivy_scan.outcome == 'success'
+        run: |
+          docker push bm106/k8s-gitops-nodejs:${{ env.VERSION }}
+          docker push bm106/k8s-gitops-nodejs:latest
+
+      # --------------------------
+      # 7. Create GitHub Release
+      # --------------------------
+      - name: Create GitHub Release
+        id: gh_release
+        if: steps.docker_push.outcome == 'success'
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.VERSION }}
+          name: Release ${{ env.VERSION }}
+
+      # --------------------------
+      # 8. Send Email Report (always)
+      # --------------------------
       - name: Send Deployment Email
         if: always()
         uses: dawidd6/action-send-mail@v3
@@ -95,34 +179,34 @@ jobs:
           subject: "Production Deployment Status: ${{ job.status }} — Version: ${{ env.VERSION }}"
           to: ${{ secrets.EMAIL_TO }}
           from: "CI Pipeline <${{ secrets.EMAIL_USER }}>"
-          content_type: text/html
-          # Uses HTML Entities for emojis to prevent them from being stripped
-          body: |
-            <h2>&#128640; Production Deployment Report</h2>
+          html_body: |
+            <div style="font-family: Arial, sans-serif; line-height: 1.5;">
+              <h2 style="color:#0b5394;">🚀 Production Deployment Report</h2>
 
-            <p><strong>Version:</strong> ${{ env.VERSION }}</p>
-            <p><strong>Final Status:</strong>
-              <span style="color:${{ job.status == 'success' && 'green' || 'red'}};">
-                ${{ job.status }}
-              </span>
-            </p>
+              <p><strong>Version:</strong> ${{ env.VERSION }}</p>
+              <p><strong>Final Status:</strong>
+                <span style="color:${{ job.status == 'success' && 'green' || 'red' }};">
+                  ${{ job.status | upper }}
+                </span>
+              </p>
 
-            <h3>&#128313; Step Summary</h3>
-            <ul>
-              <li>&#128051; Build Docker Image: <strong>${{ steps.docker_build.outcome }}</strong></li>
-              <li>&#128737; Security Scan (Trivy): <strong>${{ steps.trivy_scan.outcome }}</strong></li>
-              <li>&#128640; Push to Docker Hub: <strong>${{ steps.docker_push.outcome }}</strong></li>
-              <li>&#128230; GitHub Release: <strong>${{ steps.gh_release.outcome }}</strong></li>
-            </ul>
+              <h3 style="color:#3d85c6;">📝 Step Summary</h3>
+              <ul>
+                <li>🐶 Build Docker Image: <strong style="color:${{ steps.docker_build.outcome == 'success' && 'green' || 'red' }};">${{ steps.docker_build.outcome }}</strong></li>
+                <li>🛡 Security Scan (Trivy): <strong style="color:${{ steps.trivy_scan.outcome == 'success' && 'green' || 'red' }};">${{ steps.trivy_scan.outcome }}</strong></li>
+                <li>🚢 Push to Docker Hub: <strong style="color:${{ steps.docker_push.outcome == 'success' && 'green' || 'orange' }};">${{ steps.docker_push.outcome }}</strong></li>
+                <li>📦 GitHub Release: <strong style="color:${{ steps.gh_release.outcome == 'success' && 'green' || 'orange' }};">${{ steps.gh_release.outcome }}</strong></li>
+              </ul>
 
-            <hr/>
+              <hr/>
 
-            <p>
-              ${{ job.status == 'success' && '&#127881; Deployment completed successfully. All stages passed.' || '&#10071; Deployment failed during one or more stages. Please check details below.' }}
-            </p>
+              <p style="font-size: 14px; color:${{ job.status == 'success' && 'green' || 'red' }};">
+                ${{ job.status == 'success' && '🎉 Deployment completed successfully. All stages passed.' || '❗ Deployment failed during one or more stages. Please check details below.' }}
+              </p>
 
-            <p>
-              <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}">
-                &#128279; View Full Logs
-              </a>
-            </p>
+              <p>
+                <a href="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" style="text-decoration:none; color:#1155cc;">
+                  🔗 View Full Logs
+                </a>
+              </p>
+            </div>
