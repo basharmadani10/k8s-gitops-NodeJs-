@@ -1,0 +1,113 @@
+# replicas & autoscaling
+replicaCount: 1
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 70
+
+# image settings
+image:
+  repository: bm106/k8s-gitops-nodejs
+  tag: "2.0.0"
+  pullPolicy: IfNotPresent
+
+# secret for private image registry (optional)
+imagePullSecrets:
+  - name: dockerhub-secret
+
+serviceAccount:
+  create: true # أو false إذا كنت تريد استخدام ServiceAccount موجود
+  name: "" # إذا create=true، يمكن تركها فارغة ليتم توليد الاسم تلقائياً
+
+ingress:
+  enabled: false
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+httpRoute:
+  enabled: false # true إذا تريد تفعيل HTTPRoute
+  annotations: {}
+  hosts:
+    - host: chart-example.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+
+# service settings
+service:
+  port: 3000
+  type: NodePort
+
+# environment variables
+containers:
+  - name: k8s-gitops
+    image:
+      repository: bm106/k8s-gitops-nodejs
+      tag: "latest"
+    ports:
+      - name: http
+        containerPort: 3000
+    env:
+      - name: APP_VERSION
+        value: "2.0.0"
+      - name: APP_MESSAGE
+        valueFrom:
+          secretKeyRef:
+            name: env-application
+            key: APP_MESSAGE
+
+# resources (CPU & Memory)
+resources:
+  requests:
+    cpu: "500m"
+    memory: "1Gi"
+  limits:
+    cpu: "1"
+    memory: "2Gi"
+
+# probes
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 3000
+  initialDelaySeconds: 90
+  timeoutSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 3000
+  initialDelaySeconds: 30
+  timeoutSeconds: 10
+
+# volumes & volume mounts
+volumes:
+  - name: data
+    emptyDir: {}
+
+volumeMounts:
+  - name: data
+    mountPath: /data
+
+# pod labels & annotations
+
+podLabels:
+  app: k8s-gitops
+
+podAnnotations: {}
+
+# security contexts
+podSecurityContext: {}
+securityContext: {}
+
+# node scheduling
+nodeSelector: {}
+affinity: {}
+tolerations: {}

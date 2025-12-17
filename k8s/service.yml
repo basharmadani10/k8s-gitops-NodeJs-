@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: k8s-gitops-service
+spec:
+  selector:
+    name: k8s-gitops
+  type: NodePort
+  ports:
+    - name: k8s-gitops
+      port: 3000
+      targetPort: 3000

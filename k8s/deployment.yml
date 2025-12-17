@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-gitops
+  labels:
+    name: k8s-gitops
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: k8s-gitops
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        name: k8s-gitops
+    spec:
+      imagePullSecrets:
+        - name: dockerhub-secret
+      containers:
+        - name: k8s-gitops
+          image: bm106/k8s-gitops-nodejs:latest
+          ports:
+            - containerPort: 3000
+              name: port
+          env:
+            - name: APP_MESSAGE
+              valueFrom:
+                secretKeyRef:
+                  key: APP_MESSAGE
+                  name: env-application
+            - name: APP_VERSION
+              value: "2.0.0"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 90
+            timeoutSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            timeoutSeconds: 10
+
+          volumeMounts:
+            - name: data
+              mountPath: /data
+
+      volumes:
+        - name: data
+          emptyDir: {}
